@@ -1,0 +1,7 @@
+{
+  "name": "Zenith",
+  "description": "Zenith est une application de gestion de budget proactive et ingénieuse, alimentée par l'IA. Elle présente un design épuré et minimaliste en mode sombre pour créer une expérience de bien-être financier calme et concentrée. Les utilisateurs peuvent suivre manuellement les transactions, définir des budgets et recevoir des informations, des prédictions et des analyses comportementales basées sur l'IA pour améliorer leurs habitudes financières.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

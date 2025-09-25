@@ -25,13 +25,32 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, savingsGoal, budget
   const [prediction, setPrediction] = useState<ZenithPrediction | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { totalIncome, totalExpense, totalSavings, balance } = useMemo(() => {
+  const { totalIncome, totalExpense, totalSavings, balance, projectedBalance } = useMemo(() => {
     const income = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-    const expense = transactions.filter(t => t.type === 'expense' && t.category !== 'Épargne').reduce((sum, t) => sum + t.amount, 0);
-    const savings = transactions.filter(t => t.type === 'expense' && t.category === 'Épargne').reduce((sum, t) => sum + t.amount, 0);
+    
+    const expenseTransactions = transactions.filter(t => t.type === 'expense');
+
+    const expense = expenseTransactions.filter(t => t.category !== 'Épargne').reduce((sum, t) => sum + t.amount, 0);
+    const savings = expenseTransactions.filter(t => t.category === 'Épargne').reduce((sum, t) => sum + t.amount, 0);
     const currentBalance = income - expense - savings;
-    return { totalIncome: income, totalExpense: expense, totalSavings: savings, balance: currentBalance };
-  }, [transactions]);
+    
+    // Projected balance calculation: Income - (Sum of budget limits) - (Expenses in non-budgeted categories)
+    const totalBudgetLimit = budgets.reduce((sum, budget) => sum + budget.limit, 0);
+    const budgetedCategoryNames = budgets.map(b => b.category);
+    const nonBudgetedExpenses = expenseTransactions
+        .filter(t => t.category !== 'Épargne' && !budgetedCategoryNames.includes(t.category))
+        .reduce((sum, t) => sum + t.amount, 0);
+    
+    const projectedEndBalance = income - totalBudgetLimit - nonBudgetedExpenses;
+
+    return { 
+      totalIncome: income, 
+      totalExpense: expense, 
+      totalSavings: savings, 
+      balance: currentBalance,
+      projectedBalance: projectedEndBalance,
+    };
+  }, [transactions, budgets]);
 
   useEffect(() => {
     const fetchPrediction = async () => {
@@ -118,7 +137,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, savingsGoal, budget
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title="Revenus du mois" amount={totalIncome} icon="fa-arrow-up" iconContainerClass="bg-green-500/10" iconClass="text-green-500 dark:text-green-400" />
         <StatCard title="Dépenses du mois" amount={totalExpense} icon="fa-arrow-down" iconContainerClass="bg-red-500/10" iconClass="text-red-500 dark:text-red-400" />
-        <StatCard title="Épargne du mois" amount={totalSavings} icon="fa-piggy-bank" iconContainerClass="bg-sky-500/10" iconClass="text-sky-500 dark:text-sky-400" />
+        <StatCard title="Solde Prévu" amount={projectedBalance} icon="fa-calculator" iconContainerClass="bg-sky-500/10" iconClass="text-sky-500 dark:text-sky-400" />
         <StatCard title="Solde actuel" amount={balance} icon="fa-wallet" iconContainerClass="bg-amber-500/10" iconClass="text-amber-500 dark:text-amber-400" />
       </div>
 
